@@ -111,7 +111,7 @@ body {
     min-height: 100vh;
     display: flex;
     align-items: center;
-    background: linear-gradient(rgba(4, 120, 87, 0.8), rgba(5, 150, 105, 0.8)), url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&h=1080&fit=crop') center center/cover;
+    background: linear-gradient(rgba(4, 120, 87, 0.8), rgba(5, 150, 105, 0.8)), url('Gedung.jpg') center center/cover;
     padding: 0 2rem;
     margin-top: 60px;
     position: relative;
@@ -185,7 +185,6 @@ body {
     top: 0;
     width: 50%;
     height: 100%;
-    opacity: 0.3;
 }
 
 .hero-image img {
@@ -193,8 +192,6 @@ body {
     height: 100%;
     object-fit: cover;
 }
-
-/* Hero section no longer has image illustration - using background image instead */
 
 /* Section Styles */
 section {
