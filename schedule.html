@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal - Laboratorium Nusa Putra</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <i class="fas fa-flask"></i>
+                <span>Lab Nusa Putra</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="schedule.html" class="active">Jadwal</a></li>
+                <li><a href="index.html">Beranda</a></li>
+            </ul>
+            <div class="user-menu">
+                <span id="userName">User</span>
+                <button id="logoutBtn" class="btn-logout"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+            <div class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Schedule Section -->
+    <section class="schedule-section">
+        <div class="container">
+            <h2 class="section-title">Jadwal Laboratorium</h2>
+            
+            <div class="schedule-controls">
+                <div class="date-filter">
+                    <label for="scheduleDate">Pilih Tanggal:</label>
+                    <input type="date" id="scheduleDate">
+                </div>
+                <button id="addScheduleBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah Jadwal</button>
+            </div>
+
+            <!-- Schedule Form Modal -->
+            <div id="scheduleModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h3><i class="fas fa-calendar-plus"></i> Tambah Jadwal Baru</h3>
+                    <form id="scheduleForm">
+                        <div class="form-group">
+                            <label for="scheduleTitle">Judul Kegiatan</label>
+                            <input type="text" id="scheduleTitle" placeholder="Masukkan judul kegiatan" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="scheduleDateInput">Tanggal</label>
+                            <input type="date" id="scheduleDateInput" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="scheduleTime">Waktu</label>
+                            <input type="time" id="scheduleTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="scheduleLab">Laboratorium</label>
+                            <select id="scheduleLab" required>
+                                <option value="">Pilih Laboratorium</option>
+                                <option value="lab-komputer">Laboratorium Komputer</option>
+                                <option value="lab-bahasa">Laboratorium Bahasa</option>
+                                <option value="lab-sipil">Laboratorium Sipil</option>
+                                <option value="lab-mesin">Laboratorium Mesin</option>
+                                <option value="lab-elektro">Laboratorium Elektro</option>
+                                <option value="lab-biotek">Laboratorium Bioteknologi</option>
+                                <option value="lab-dkv">Laboratorium DKV</option>
+                                <option value="lab-microteaching">Laboratorium Microteaching</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="scheduleDescription">Deskripsi</label>
+                            <textarea id="scheduleDescription" rows="3" placeholder="Deskripsi kegiatan"></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" id="okBtn" class="btn btn-secondary"><i class="fas fa-check"></i> OK</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Jadwal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Schedule List -->
+            <div id="scheduleList" class="schedule-list">
+                <p class="no-schedule">Belum ada jadwal yang ditambahkan</p>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+    <script>
+        // Check if user is logged in
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('userName').textContent = currentUser.name;
+
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('scheduleDate').value = today;
+        document.getElementById('scheduleDateInput').value = today;
+
+        // Load schedules
+        function loadSchedules() {
+            const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+            const selectedDate = document.getElementById('scheduleDate').value;
+            const scheduleList = document.getElementById('scheduleList');
+            
+            const filteredSchedules = schedules.filter(s => s.date === selectedDate);
+            
+            if (filteredSchedules.length === 0) {
+                scheduleList.innerHTML = '<p class="no-schedule">Belum ada jadwal untuk tanggal ini</p>';
+                return;
+            }
+
+            scheduleList.innerHTML = filteredSchedules.map(schedule => `
+                <div class="schedule-item" data-id="${schedule.id}">
+                    <div class="schedule-time">${schedule.time}</div>
+                    <div class="schedule-details">
+                        <h4>${schedule.title}</h4>
+                        <p class="schedule-lab">${getLabName(schedule.lab)}</p>
+                        <p class="schedule-desc">${schedule.description || ''}</p>
+                    </div>
+                    <div class="schedule-actions">
+                        <button class="btn-edit" onclick="editSchedule(${schedule.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete" onclick="deleteSchedule(${schedule.id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getLabName(value) {
+            const labs = {
+                'lab-komputer': 'Laboratorium Komputer',
+                'lab-bahasa': 'Laboratorium Bahasa',
+                'lab-sipil': 'Laboratorium Sipil',
+                'lab-mesin': 'Laboratorium Mesin',
+                'lab-elektro': 'Laboratorium Elektro',
+                'lab-biotek': 'Laboratorium Bioteknologi',
+                'lab-dkv': 'Laboratorium DKV',
+                'lab-microteaching': 'Laboratorium Microteaching'
+            };
+            return labs[value] || value;
+        }
+
+        // Modal functions
+        const modal = document.getElementById('scheduleModal');
+        const addBtn = document.getElementById('addScheduleBtn');
+        const closeBtn = document.querySelector('.close');
+
+        addBtn.onclick = () => modal.classList.add('active');
+        closeBtn.onclick = () => modal.classList.remove('active');
+        window.onclick = (e) => {
+            if (e.target == modal) modal.classList.remove('active');
+        };
+
+        // Save schedule
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const schedule = {
+                id: Date.now(),
+                title: document.getElementById('scheduleTitle').value,
+                date: document.getElementById('scheduleDateInput').value,
+                time: document.getElementById('scheduleTime').value,
+                lab: document.getElementById('scheduleLab').value,
+                description: document.getElementById('scheduleDescription').value,
+                createdBy: currentUser.name,
+                createdAt: new Date().toISOString()
+            };
+
+            const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+            schedules.push(schedule);
+            localStorage.setItem('schedules', JSON.stringify(schedules));
+            
+            this.reset();
+            modal.classList.remove('active');
+            loadSchedules();
+            showNotification('Jadwal berhasil disimpan!', 'success');
+        });
+        
+        // OK button to close modal
+        document.getElementById('okBtn').addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        // Edit schedule
+        window.editSchedule = function(id) {
+            const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+            const schedule = schedules.find(s => s.id === id);
+            if (schedule) {
+                document.getElementById('scheduleTitle').value = schedule.title;
+                document.getElementById('scheduleDateInput').value = schedule.date;
+                document.getElementById('scheduleTime').value = schedule.time;
+                document.getElementById('scheduleLab').value = schedule.lab;
+                document.getElementById('scheduleDescription').value = schedule.description;
+                modal.classList.add('active');
+                
+                // Update form to edit mode
+                this.dataset.editId = id;
+            }
+        };
+
+        // Delete schedule
+        window.deleteSchedule = function(id) {
+            if (confirm('Yakin ingin menghapus jadwal ini?')) {
+                let schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+                schedules = schedules.filter(s => s.id !== id);
+                localStorage.setItem('schedules', JSON.stringify(schedules));
+                loadSchedules();
+                showNotification('Jadwal berhasil dihapus!', 'success');
+            }
+        };
+
+        // Date filter change
+        document.getElementById('scheduleDate').addEventListener('change', loadSchedules);
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            showNotification('Berhasil keluar!', 'success');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+        });
+
+        // Initial load
+        loadSchedules();
+    </script>
+</body>
+</html>
